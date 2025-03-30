@@ -7,16 +7,15 @@ import os
 import sys
 import signal
 import subprocess
+import configparser
+
+import psutil
 
 # ------------------------------------------------------------------------
-# Settings & Config
+# Hardcoded Paths
 # ------------------------------------------------------------------------
-SCRIPT_ENABLED: bool = True                                                                             # True/False decides whether this script is active.
-
-LOGS_PATH: str = r"ScrewLegionSpace-Logs.txt"                                                           # The (full or relative) filepath where logs should be saved, by default this is in the same location as this script.
-LEGION_SPACE_EXECUTABLE_NAME: str = r"LegionSpace.exe"                                                  # The name of the Legion Space executable.
-REPLACEMENT_EXECUTABLE_PATH: None | str = r"C:\\Program Files\\Playnite\\Playnite.FullscreenApp.exe"    # The full filepath to the executable that should be launched instead of Legion Space. If you only want to disable Legion Space, change this to None.
-CHECK_FOR_PROCESS_FREQUENCY: float = 1.0                                                                # The frequency in seconds how often the script should check for an active Legion Space process
+LOGS_PATH: str = f"{os.getcwd()}\\ScrewLegionSpace-Logs.txt"
+CONFIG_PATH: str = f"{os.getcwd()}\\ScrewLegionSpace-Config.ini"
 
 # ------------------------------------------------------------------------
 # Logging
@@ -24,57 +23,86 @@ CHECK_FOR_PROCESS_FREQUENCY: float = 1.0                                        
 logging.basicConfig(filename=LOGS_PATH, level=logging.INFO, format="%(asctime)s - %(levelname)s : %(message)s")
 
 # ------------------------------------------------------------------------
-# Functionality
+# Config Functions
+# ------------------------------------------------------------------------
+config = configparser.ConfigParser()
+
+def create_config() -> None:
+    config['ScrewLegionSpace'] = {'script_enabled': 'true', 'check_process_fequency': 1.0, 'legion_space_exe_name': 'LegionSpace.exe', 'start_replacement_exe': 'true', 'replacement_exe_path': 'C:\\Program Files\\Playnite\\Playnite.FullscreenApp.exe'}
+    try:
+        with open(CONFIG_PATH, 'w') as cf:
+            config.write(cf)
+    except Exception as e:
+        logging.error(f"There was an error creating the configuration file, as a result ScrewLegionSpace will close!:\n    {e}")
+        sys.exit()
+        
+def read_config() -> tuple[bool, float, str, bool, str]:
+    config.read(CONFIG_PATH)
+    try:
+        SCRIPT_ENABLED: bool = config.getboolean('ScrewLegionSpace', 'script_enabled')
+        CHECK_PROCESS_FREQUENCY: float = config.getfloat('ScrewLegionSpace', 'check_process_fequency')
+        LEGION_SPACE_EXE_NAME: str = config.get('ScrewLegionSpace', 'legion_space_exe_name')
+        START_REPLACEMENT_EXE: bool = config.getboolean('ScrewLegionSpace', 'start_replacement_exe')
+        REPLACEMENT_EXE_PATH: str = config.get('ScrewLegionSpace', 'replacement_exe_path')
+    except Exception as e:
+        logging.error(f"There was an error reading the configuration file, as a result ScrewLegionSpace will close!:\n    {e}")
+        sys.exit()
+        
+    if len(LEGION_SPACE_EXE_NAME) < 5:
+        logging.error(f"'legion_space_exe_name' Cannot be empty, as a result ScrewLegionSpace will close!")
+        sys.exit()
+    if len(REPLACEMENT_EXE_PATH) < 5:
+        logging.error(f"'replacement_exe_path' Cannot be empty, as a result ScrewLegionSpace will close!")
+        sys.exit()
+        
+    return SCRIPT_ENABLED, CHECK_PROCESS_FREQUENCY, LEGION_SPACE_EXE_NAME, START_REPLACEMENT_EXE, REPLACEMENT_EXE_PATH
+
+# ------------------------------------------------------------------------
+# Main Functionality
 # ------------------------------------------------------------------------
 if __name__ == "__main__":
-    logging.info("ScrewLegionSpace V1 Successfully started!")
-
-    # Check all user input in the settings and log errors
-    if not isinstance(SCRIPT_ENABLED, bool):
-        logging.error(f"There was an error with the 'SCRIPT_ENABLED' option: Needs to be True or False! Due to this error the script has closed.")
-        sys.exit()
-    if not isinstance(CHECK_FOR_PROCESS_FREQUENCY, (float, int)):
-        logging.error(f"There was an error with the 'CHECK_FOR_PROCESS_FREQUENCY' option: Needs to be a valid number of seconds! Due to this error the script has closed.")
-        sys.exit()
+    logging.info(f"ScrewLegionSpace V1 Successfully started at: {os.getcwd()}")
+    
+    while True:
+        # Read the config file or create one if one does not exist
+        if os.path.isfile(CONFIG_PATH):
+            SCRIPT_ENABLED, CHECK_PROCESS_FREQUENCY, LEGION_SPACE_EXE_NAME, START_REPLACEMENT_EXE, REPLACEMENT_EXE_PATH = read_config()
+        else:
+            create_config()
+            logging.info(f"No Configuration file found! New Configuration file created at: {CONFIG_PATH}")
         
-    if len(LOGS_PATH) < 5 :
-        logging.error(f"There was an error with the 'LOGS_PATH' option: Needs to be a valid filepath and cannot be empty! Due to this error the script has closed.")
-        sys.exit()
-    if len(LEGION_SPACE_EXECUTABLE_NAME) < 5:
-        logging.error(f"There was an error with the 'LEGION_SPACE_EXECUTABLE_NAME' option: Needs to be a valid executable name and cannot be empty! Due to this error the script has closed.")
-        sys.exit()
-        
-    if not isinstance(REPLACEMENT_EXECUTABLE_PATH, (None, str)):
-        logging.error(f"There was an error with the 'REPLACEMENT_EXECUTABLE_PATH' option: Needs to be a valid executable name or be set to None! Due to this error the script has closed.")
-        sys.exit()
-    if REPLACEMENT_EXECUTABLE_PATH is not None:
-        if len(REPLACEMENT_EXECUTABLE_PATH) < 5:
-            logging.error(f"There was an error with the 'REPLACEMENT_EXECUTABLE_PATH' setting: Needs to be a valid filepath and cannot be empty! Due to this error the script has closed.")
-            sys.exit()
+        # If the script is enabled, look for instances of a Legion Space process and kill it, then start the replacement executable if desired.
+        if SCRIPT_ENABLED is True:
+            try:
+                for process in psutil.process_iter():
+                    if LEGION_SPACE_EXE_NAME.lower() == process.name().lower():
+                        try:
+                            process.kill()
+                            logging.info(f"Successfully terminated process '{LEGION_SPACE_EXE_NAME}'")
+                        except Exception as e:
+                            logging.error(f"There was an error killing the active process!:\n    {e}")
+                        if START_REPLACEMENT_EXE is True:
+                            try:
+                                os.startfile(REPLACEMENT_EXE_PATH)
+                                logging.info(f"Successfully started executable '{REPLACEMENT_EXE_PATH}'")
+                            except Exception as e:
+                                logging.error(f"There was an error starting the desired executable!:\n    {e}")
 
-    # Start checking at the given frequency if Legion Space is in the active tasklist, and if it kill it and start the replacement executable
-    while SCRIPT_ENABLED is True:
-        try:
-            result = subprocess.run(["tasklist"], capture_output=True, text=True, check=True)
-        except Exception as e:
-            logging.error(f"There was an error getting the active tasklist ↓:\n{e}")
+            except Exception as e:
+                logging.error(f"There was an error reading the configuration file, as a result ScrewLegionSpace will close!:\n    {e}")
+                sys.exit()
         
-        try:
-            for line in result.stdout.splitlines():
-                if LEGION_SPACE_EXECUTABLE_NAME.lower() in line.lower():
-                    pid = int(line.split()[1])
-                    try:
-                        os.kill(pid, signal.SIGTERM)
-                        logging.info(f"Successfully terminated process '{LEGION_SPACE_EXECUTABLE_NAME}' with PID: {pid}")
-                    except Exception as e:
-                        logging.error(f"There was an error killing the active process ↓:\n{e}")
-                    try:
-                        if REPLACEMENT_EXECUTABLE_PATH is not None:
-                            os.startfile(REPLACEMENT_EXECUTABLE_PATH)
-                            logging.info(f"Successfully started executable '{REPLACEMENT_EXECUTABLE_PATH}'")
-                    except Exception as e:
-                        logging.error(f"There was an error starting the desired executable ↓:\n{e}")                   
-        except Exception as e:
-            logging.error(f"There was an error reading the tasklist ↓:\n{e}")
+        time.sleep(CHECK_PROCESS_FREQUENCY)
+        
+    
+    
+    
+    
+    
+    
+        
+    
+    
 
-        time.sleep(CHECK_FOR_PROCESS_FREQUENCY)
+
+
