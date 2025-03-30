@@ -10,7 +10,7 @@ When the script is active, it will intercept **any** attempt to start Legion Spa
 2. Move the executable to the location you'd like 
 
 ## Build the script
-If you prefer, you can download the repository and build an executable file yourself using PyInstaller using the following command: pyinstaller --onefile --noconsole --add-data "src/icon.ico;." --icon src/icon.ico screw-legion-space.pyw
+If you prefer, you can download the repository and build an executable file yourself using PyInstaller using the following command: pyinstaller --onefile --noconsole --add-data "src/icon.ico;." --icon "src/icon.ico" --name "ScrewLegionSpace" "src/ScrewLegionSpace.pyw"
 
 ## Disclaimer
 This is a _very_ janky script and was originally made just for my own personal use. Use at your own risk!
