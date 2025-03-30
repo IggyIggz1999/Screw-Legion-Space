@@ -1,0 +1,7 @@
+.venv/
+.vscode/
+dist/
+build/
+__pycache__
+tests/
+ScrewLegionSpace-Logs.txt
