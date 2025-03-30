@@ -5,8 +5,6 @@ import logging
 import time
 import os
 import sys
-import signal
-import subprocess
 import configparser
 
 import psutil
