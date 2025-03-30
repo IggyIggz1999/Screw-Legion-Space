@@ -6,14 +6,19 @@ import time
 import os
 import sys
 import configparser
+import threading
+import subprocess
 
 import psutil
+from pystray import Icon, MenuItem, Menu
+from PIL import Image
 
 # ------------------------------------------------------------------------
 # Hardcoded Paths
 # ------------------------------------------------------------------------
 LOGS_PATH: str = f"{os.getcwd()}\\ScrewLegionSpace-Logs.txt"
 CONFIG_PATH: str = f"{os.getcwd()}\\ScrewLegionSpace-Config.ini"
+CURRENT_EXE_PATH: str = f"{os.getcwd()}\\ScrewLegionSpace.exe"
 
 # ------------------------------------------------------------------------
 # Logging
@@ -56,19 +61,17 @@ def read_config() -> tuple[bool, float, str, bool, str]:
     return SCRIPT_ENABLED, CHECK_PROCESS_FREQUENCY, LEGION_SPACE_EXE_NAME, START_REPLACEMENT_EXE, REPLACEMENT_EXE_PATH
 
 # ------------------------------------------------------------------------
-# Main Functionality
+# Main Functiions
 # ------------------------------------------------------------------------
-if __name__ == "__main__":
-    logging.info(f"ScrewLegionSpace V1 Successfully started at: {os.getcwd()}")
-    
-    while True:
+def run_process_check() -> None:
+    logging.info(f"Process scanning thread started successfully!")
+    while not stop_event.is_set():
         # Read the config file or create one if one does not exist
-        if os.path.isfile(CONFIG_PATH):
-            SCRIPT_ENABLED, CHECK_PROCESS_FREQUENCY, LEGION_SPACE_EXE_NAME, START_REPLACEMENT_EXE, REPLACEMENT_EXE_PATH = read_config()
-        else:
+        if not os.path.isfile(CONFIG_PATH):
             create_config()
             logging.info(f"No Configuration file found! New Configuration file created at: {CONFIG_PATH}")
-        
+        SCRIPT_ENABLED, CHECK_PROCESS_FREQUENCY, LEGION_SPACE_EXE_NAME, START_REPLACEMENT_EXE, REPLACEMENT_EXE_PATH = read_config()
+            
         # If the script is enabled, look for instances of a Legion Space process and kill it, then start the replacement executable if desired.
         if SCRIPT_ENABLED is True:
             try:
@@ -91,6 +94,42 @@ if __name__ == "__main__":
                 sys.exit()
         
         time.sleep(CHECK_PROCESS_FREQUENCY)
+
+def open_config_file(icon, _) -> None:
+    logging.info(f"[Tray Icon] Opening configuration file at: {CONFIG_PATH}!")
+    os.startfile(CONFIG_PATH)
+
+def run_at_startup(icon, _) -> None:
+    cmd = (f'powershell -Command "Start-Process schtasks -ArgumentList \'/create /tn \"ScrewLegionSpace\" /tr \"{CURRENT_EXE_PATH}\" /sc ONLOGON /f\' -Verb RunAs"')
+    subprocess.run(cmd, shell=True)
+    logging.info(f"[Tray Icon] Set executable to run on boot: {os.getcwd()}")
+
+def exit_program(icon, _) -> None:
+    logging.info(f"[Tray Icon] Exitting program!")
+    stop_event.set()
+    icon.stop()
+    
+# ------------------------------------------------------------------------
+# Program Flow
+# ------------------------------------------------------------------------
+if __name__ == "__main__":
+    if hasattr(sys, '_MEIPASS'):
+        icon_path = os.path.join(sys._MEIPASS, "icon.ico")
+        image = Image.open(icon_path)
+    else:
+        image = Image.new("RGB", (32, 32), (79, 81, 175))
+    menu = Menu(MenuItem("Open Configuration File", open_config_file), MenuItem("Run Program at Startup", run_at_startup), MenuItem("Quit Program", exit_program))
+    icon = Icon("icon", image, "ScrewLegionSpace", menu)
+    
+    stop_event = threading.Event()
+    
+    thread = threading.Thread(target=run_process_check, daemon=True)
+    thread.start()
+    logging.info(f"ScrewLegionSpace Successfully started at: {os.getcwd()}")
+    icon.run()
+    thread.join()
+
+    
         
     
     
