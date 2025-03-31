@@ -14,6 +14,8 @@ Due to the way this script functions, **Legion Space cannot be launched by any m
 
 ScrewLegionSpace runs in the background without any visible windows. You can close it via the system tray icon.
 
+(Of course, it is also possible to install Python and run the .pyw script directly instead of using an executable.)
+
 ## Build the script yourself
 A prebuilt executable is available in this repository, but if you prefer, you can modify and compile your own version using PyInstaller with the following command:
 ```pyinstaller --onefile --noconsole --add-data "src/icon.ico;." --icon "src/icon.ico" --name "ScrewLegionSpace" "src/ScrewLegionSpace.pyw"```

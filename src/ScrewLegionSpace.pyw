@@ -114,7 +114,7 @@ def open_config_file(icon, _) -> None:
     os.startfile(CONFIG_PATH)
 
 def run_at_startup(icon, _) -> None:
-    """run_at_startup Function that will add a task to thge Windows Task Scheduler to run this program on boot.
+    """run_at_startup Function that will add a task to the Windows Task Scheduler to run this program on boot.
 
     Args:
         icon (_type_): The tray icon this function is a part of.
