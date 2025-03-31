@@ -31,6 +31,8 @@ logging.basicConfig(filename=LOGS_PATH, level=logging.INFO, format="%(asctime)s 
 config = configparser.ConfigParser()
 
 def create_config() -> None:
+    """create_config Function will create the configuration file with the default values.
+    """
     config['ScrewLegionSpace'] = {'script_enabled': 'true', 'check_process_fequency': 1.0, 'legion_space_exe_name': 'LegionSpace.exe', 'start_replacement_exe': 'true', 'replacement_exe_path': 'C:\\Program Files\\Playnite\\Playnite.FullscreenApp.exe'}
     try:
         with open(CONFIG_PATH, 'w') as cf:
@@ -40,6 +42,11 @@ def create_config() -> None:
         sys.exit()
         
 def read_config() -> tuple[bool, float, str, bool, str]:
+    """read_config Function will read an existing configuration file, convert the values into variables and return them.
+
+    Returns:
+        tuple[bool, float, str, bool, str]: Returns the various configuration options: 'script_enabled' / 'check_process_fequency' / 'legion_space_exe_name' / 'start_replacement_exe' / 'replacement_exe_path'
+    """
     config.read(CONFIG_PATH)
     try:
         SCRIPT_ENABLED: bool = config.getboolean('ScrewLegionSpace', 'script_enabled')
@@ -64,6 +71,8 @@ def read_config() -> tuple[bool, float, str, bool, str]:
 # Main Functiions
 # ------------------------------------------------------------------------
 def run_process_check() -> None:
+    """run_process_check Function will be executed by a new thread to continuously check for any instances of Legion Space.
+    """
     logging.info(f"Process scanning thread started successfully!")
     while not stop_event.is_set():
         # Read the config file or create one if one does not exist
@@ -96,15 +105,30 @@ def run_process_check() -> None:
         time.sleep(CHECK_PROCESS_FREQUENCY)
 
 def open_config_file(icon, _) -> None:
+    """open_config_file Function will simply open the configuration file in the default text editor.
+
+    Args:
+        icon (_type_): The tray icon this function is a part of.
+    """
     logging.info(f"[Tray Icon] Opening configuration file at: {CONFIG_PATH}!")
     os.startfile(CONFIG_PATH)
 
 def run_at_startup(icon, _) -> None:
+    """run_at_startup Function that will add a task to thge Windows Task Scheduler to run this program on boot.
+
+    Args:
+        icon (_type_): The tray icon this function is a part of.
+    """
     cmd = (f'powershell -Command "Start-Process schtasks -ArgumentList \'/create /tn \"ScrewLegionSpace\" /tr \"{CURRENT_EXE_PATH}\" /sc ONLOGON /f\' -Verb RunAs"')
     subprocess.run(cmd, shell=True)
     logging.info(f"[Tray Icon] Set executable to run on boot: {os.getcwd()}")
 
 def exit_program(icon, _) -> None:
+    """exit_program Function will end the task and close the tray icon, resulting in the software exiting
+
+    Args:
+        icon (_type_): The tray icon this function is a part of.
+    """
     logging.info(f"[Tray Icon] Exitting program!")
     stop_event.set()
     icon.stop()
