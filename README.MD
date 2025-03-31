@@ -24,7 +24,7 @@ A prebuilt executable is available in this repository, but if you prefer, you ca
 Here is a quick breakdown of all the available configuration options:
  - ```script_enabled``` = Whether the program should be active. Can be set to true/false.
  - ```check_process_fequency``` =  How often (In seconds) the program should check whether a Legion Space process is active. 
- - ```legion_space_exe_name``` = The name of the Legion Space executable, how it would appears in Task Manager.
+ - ```legion_space_exe_name``` = The name of the Legion Space executable, how it would appear in Task Manager.
  - ```start_replacement_exe``` = If you want to remap the dedicated Legion Space button, set this to true. If you simply wanna disable the button, set this to false.
  - ```replacement_exe_path``` = The full path to the executable of the program you wanna remap the dedicated Legion Space button to. For example Playnite.
 
