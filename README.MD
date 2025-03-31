@@ -10,13 +10,13 @@ Due to the way this script functions, **Legion Space cannot be launched by any m
 2. Move the executable to any desired folder on your device.
 3. Run the executable. It will create a configuration file in the same folder. Most settings can be left as default, **but be sure to edit the path of the program you want to launch when pressing the Legion Space button!**
 4. _(Optional)_ Right-clicking the system tray icon allows you to enable automatic startup with Windows. This requires administrator privileges. Alternatively, you can manually place the executable and its configuration file in:
- - C:\Users\(Your sytem name)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+```C:\Users\(Your sytem name)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup```
 
 ScrewLegionSpace runs in the background without any visible windows. You can close it via the system tray icon.
 
 ## Build the script yourself
 A prebuilt executable is available in this repository, but if you prefer, you can modify and compile your own version using PyInstaller with the following command:
- - pyinstaller --onefile --noconsole --add-data "src/icon.ico;." --icon "src/icon.ico" --name "ScrewLegionSpace" "src/ScrewLegionSpace.pyw"
+```pyinstaller --onefile --noconsole --add-data "src/icon.ico;." --icon "src/icon.ico" --name "ScrewLegionSpace" "src/ScrewLegionSpace.pyw"```
 
 ## Configuration file (Make sure to edit this!)
 Here is a quick breakdown of all the available configuration options:
